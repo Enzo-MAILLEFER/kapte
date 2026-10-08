@@ -29,6 +29,10 @@ Si une fenêtre demande d'installer les « outils de développement », accepte,
 - **Activer / mettre en pause** : clique sur l'icône 👁 en haut de l'écran (barre des menus). En pause, l'œil est barré et tes captures ne sont ni envoyées ni supprimées.
 - **Garder une capture** : Kapte supprime chaque capture après l'avoir analysée. Pour en garder une, mets-le en pause, ou copie la capture dans le presse-papiers avec Cmd + Ctrl + Shift + 4.
 
+## Mettre à jour
+
+Kapte vérifie tout seul s'il existe une nouvelle version (au démarrage puis toutes les 6 h) et te prévient avec une bulle. Clique alors sur l'icône 👁 → **Mettre à jour vers vX…**. Tu peux aussi vérifier à la main avec **Rechercher les mises à jour**. Ta clé et tes réglages sont conservés.
+
 ## Désinstaller
 
 Double-clique sur **`Desinstaller Kapte.command`** (une copie est aussi dans le dossier caché `~/.kapte`).

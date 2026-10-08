@@ -32,7 +32,7 @@ echo "✅ Python est disponible."
 
 # 2. Copie des fichiers
 mkdir -p "$DEST"
-for f in kapte.py overlay.js menubar.js; do
+for f in kapte.py overlay.js menubar.js update.sh VERSION; do
   if [ ! -f "$SRC/$f" ]; then
     echo "❌ Fichier manquant : $f. Dézippe bien tout le dossier avant de lancer l'installation."
     pause_exit 1
@@ -41,7 +41,7 @@ for f in kapte.py overlay.js menubar.js; do
 done
 cp "$SRC/Desinstaller Kapte.command" "$DEST/" 2>/dev/null
 xattr -cr "$DEST" 2>/dev/null
-chmod +x "$DEST/kapte.py" "$DEST/Desinstaller Kapte.command" 2>/dev/null
+chmod +x "$DEST/kapte.py" "$DEST/update.sh" "$DEST/Desinstaller Kapte.command" 2>/dev/null
 echo "✅ Fichiers copiés dans $DEST"
 
 # Ancienne version (« Screen Coach ») : on reprend la config puis on la retire
@@ -206,6 +206,7 @@ echo "----------------------------------------------"
 echo " Utilisation :"
 echo "  • Fais une capture → la réponse s'affiche en bas à gauche."
 echo "  • Icône 👁 en haut de l'écran → « Mettre en pause » / « Activer »."
+echo "  • Mises à jour : Kapte te prévient tout seul, puis icône 👁 → « Mettre à jour »."
 echo "  • Désinstaller : double-clic sur « Desinstaller Kapte.command »"
 echo "    (une copie est aussi dans $DEST)."
 echo "----------------------------------------------"
