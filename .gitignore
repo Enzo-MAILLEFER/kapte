@@ -1,0 +1,6 @@
+# Données locales (jamais dans le dépôt)
+config.json
+*.log
+paused
+.DS_Store
+__pycache__/
