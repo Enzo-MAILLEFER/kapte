@@ -1,7 +1,13 @@
 import AppKit
+import Carbon.HIToolbox
 
 /// Petite bulle discrète en bas à gauche de l'écran ; les clics passent au travers.
+/// Échap la cache : la touche n'est réservée que pendant que la bulle est visible
+/// (raccourci global Carbon, aucune permission d'accessibilité nécessaire).
 final class Bubble {
+    private static weak var current: Bubble?
+    private var escapeHotKey: EventHotKeyRef?
+
     private let panel: NSPanel
     private let background = NSView()
     private let label = NSTextField(wrappingLabelWithString: "")
@@ -36,6 +42,24 @@ final class Bubble {
 
         background.addSubview(label)
         panel.contentView = background
+
+        Bubble.current = self
+        var pressed = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        InstallEventHandler(GetApplicationEventTarget(), { _, _, _ in
+            DispatchQueue.main.async {
+                log("Bulle cachée (Échap)")
+                Bubble.current?.hide()
+            }
+            return noErr
+        }, 1, &pressed, nil, nil)
+    }
+
+    /// Cache la bulle tout de suite (touche Échap).
+    func hide() {
+        hideWork?.cancel()
+        stopDots()
+        panel.orderOut(nil)
+        releaseEscape()
     }
 
     /// Affiche un texte pendant `seconds` secondes.
@@ -74,14 +98,24 @@ final class Bubble {
         background.frame = NSRect(x: 0, y: 0, width: w, height: h)
         label.frame = NSRect(x: padX, y: padY, width: tw, height: th)
         panel.orderFrontRegardless()
+        reserveEscape()
+    }
+
+    private func reserveEscape() {
+        guard escapeHotKey == nil else { return }
+        let id = EventHotKeyID(signature: OSType(0x4B415054), id: 1)  // 'KAPT'
+        let status = RegisterEventHotKey(UInt32(kVK_Escape), 0, id, GetApplicationEventTarget(), 0, &escapeHotKey)
+        if status != noErr { log("Touche Échap indisponible (erreur \(status))") }
+    }
+
+    private func releaseEscape() {
+        if let escapeHotKey { UnregisterEventHotKey(escapeHotKey) }
+        escapeHotKey = nil
     }
 
     private func scheduleHide(after seconds: Double) {
         hideWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in
-            self?.stopDots()
-            self?.panel.orderOut(nil)
-        }
+        let work = DispatchWorkItem { [weak self] in self?.hide() }
         hideWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
     }

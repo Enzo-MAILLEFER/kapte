@@ -77,6 +77,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.removeItem(at: url)
                     self.watcher.forget(url)
                     log("Réponse : \(answer)")
+                    if cfg.copyAnswer {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(answer, forType: .string)
+                    }
                     self.bubble.show(answer, seconds: cfg.displaySeconds)
                 case .failure(let error):
                     log("Erreur : \(error.localizedDescription)")

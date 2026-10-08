@@ -10,10 +10,12 @@ let launchAgentLabel = "com.kapte"
 struct Config {
     var geminiKey = ""
     var geminiModel = "gemini-3.5-flash-lite"
+    var fallbackModel = "gemini-flash-lite-latest"  // essayé en parallèle si le 1er est lent
     var displaySeconds = 15.0
     var maxWords = 45
     var watchDir = ""           // vide = dossier de captures de macOS
     var extraInstructions = ""
+    var copyAnswer = true       // copie chaque réponse dans le presse-papiers
 
     static func load() -> Config {
         var c = Config()
@@ -24,10 +26,12 @@ struct Config {
         }
         if let v = json["gemini_api_key"] as? String { c.geminiKey = v }
         if let v = json["gemini_model"] as? String, !v.isEmpty { c.geminiModel = v }
+        if let v = json["gemini_fallback_model"] as? String { c.fallbackModel = v }
         if let v = json["display_seconds"] as? NSNumber { c.displaySeconds = v.doubleValue }
         if let v = json["max_words"] as? NSNumber { c.maxWords = v.intValue }
         if let v = json["watch_dir"] as? String { c.watchDir = v }
         if let v = json["extra_instructions"] as? String { c.extraInstructions = v }
+        if let v = json["copy_answer"] as? Bool { c.copyAnswer = v }
         if c.geminiKey.isEmpty, let env = ProcessInfo.processInfo.environment["GEMINI_API_KEY"] {
             c.geminiKey = env
         }

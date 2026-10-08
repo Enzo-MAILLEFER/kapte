@@ -26,6 +26,8 @@ Kapte s'installe dans le dossier `Applications` de ton dossier perso et démarre
 ## Utiliser
 
 - **Capture** : Cmd + Shift + 4 (zone) ou Cmd + Shift + 3 (écran entier). Trois petits points apparaissent en bas à gauche pendant l'analyse, puis la réponse.
+- **La réponse est copiée** dans le presse-papiers : Cmd + V pour la coller.
+- **Cacher la bulle** : appuie sur **Échap** (la touche n'est prise par Kapte que pendant que la bulle est affichée).
 - **Activer / mettre en pause** : clique sur l'icône 👁 en haut de l'écran (barre des menus). En pause, l'œil est barré et tes captures ne sont ni envoyées ni supprimées.
 - **Garder une capture** : Kapte supprime chaque capture après l'avoir analysée. Pour en garder une, mets-le en pause, ou copie la capture dans le presse-papiers avec Cmd + Ctrl + Shift + 4.
 
@@ -46,6 +48,8 @@ Dans `~/.kapte/config.json` (dans le Finder : Cmd + Shift + G, puis colle `~/.ka
 | `display_seconds` | Durée d'affichage de la bulle, en secondes (15 par défaut) |
 | `max_words` | Longueur max de la réponse |
 | `extra_instructions` | Contexte en plus, ex. « Je révise l'anglais, explique-moi brièvement le mot. » |
+| `copy_answer` | `false` pour ne plus copier la réponse dans le presse-papiers |
+| `gemini_model` / `gemini_fallback_model` | Modèle principal, et modèle de secours essayé en parallèle si le premier met plus de 5 s à répondre |
 
 Les changements sont pris en compte dès la capture suivante.
 
