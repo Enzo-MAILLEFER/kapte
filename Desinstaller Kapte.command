@@ -25,7 +25,7 @@ for L in com.kapte com.kapte.menubar; do
   rm -f "$LA/$L.plist"
 done
 pkill -f "$DEST/menubar.js" >/dev/null 2>&1
-rm -rf "$DEST"
+rm -rf "$DEST" "$HOME/Applications/Kapte.app"
 defaults delete com.apple.screencapture location >/dev/null 2>&1
 
 echo

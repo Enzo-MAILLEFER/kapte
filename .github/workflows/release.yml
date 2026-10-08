@@ -1,0 +1,33 @@
+# Publie une release quand on pousse un tag vX.Y.Z : compile Kapte.app et joint Kapte.zip.
+# Les apps installées se mettent à jour toutes seules à partir de cette release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier que VERSION correspond au tag
+        run: |
+          if [ "v$(cat VERSION)" != "$GITHUB_REF_NAME" ]; then
+            echo "VERSION contient $(cat VERSION) mais le tag est $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+      - name: Compiler
+        run: ./build.sh
+
+      - name: Publier la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/Kapte.zip \
+            --title "Kapte $GITHUB_REF_NAME" --generate-notes

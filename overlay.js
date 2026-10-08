@@ -1,4 +1,4 @@
-// Bulle de texte en bas à gauche de l'écran.
+// Bulle de la v1 (JavaScript). Gardée seulement pour la migration v1 → v2 (voir kapte.py).
 // Usage : osascript -l JavaScript overlay.js "texte" [secondes]
 ObjC.import('Cocoa');
 

@@ -4,3 +4,4 @@ config.json
 paused
 .DS_Store
 __pycache__/
+build/

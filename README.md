@@ -6,13 +6,15 @@ Gratuit : l'analyse est faite par Gemini (Google) avec ta propre clé gratuite.
 
 ## Installer (5 minutes)
 
-Nécessite un Mac (macOS 13 ou plus récent).
+Nécessite un Mac (macOS 13 ou plus récent). Rien d'autre à installer.
 
-1. **[Télécharge Kapte](https://github.com/Enzo-MAILLEFER/kapte/archive/refs/heads/main.zip)** puis ouvre le fichier zip téléchargé (il se dézippe tout seul dans Téléchargements).
+1. **[Télécharge Kapte](https://github.com/Enzo-MAILLEFER/kapte/releases/latest/download/Kapte.zip)** puis ouvre le fichier zip téléchargé (il se dézippe tout seul dans Téléchargements).
 2. Double-clique sur **`Installer Kapte.command`** et suis les étapes de la fenêtre :
    - créer ta clé Gemini (la page s'ouvre toute seule, il faut un compte Google) ;
    - choisir le dossier « Screenshots » pour les captures ;
    - faire une capture pour tester.
+
+Kapte s'installe dans le dossier `Applications` de ton dossier perso et démarre tout seul à chaque ouverture de session.
 
 ### Si macOS bloque le fichier
 
@@ -20,8 +22,6 @@ Nécessite un Mac (macOS 13 ou plus récent).
 
 - Va dans **Réglages Système → Confidentialité et sécurité**, descends tout en bas et clique sur **« Ouvrir quand même »** à côté de Kapte.
 - Ou ouvre l'app **Terminal**, tape `bash ` (avec un espace), glisse le fichier `Installer Kapte.command` dans la fenêtre, puis appuie sur Entrée.
-
-Si une fenêtre demande d'installer les « outils de développement », accepte, attends la fin, puis relance l'installation.
 
 ## Utiliser
 
@@ -31,7 +31,7 @@ Si une fenêtre demande d'installer les « outils de développement », accepte,
 
 ## Mettre à jour
 
-Kapte vérifie tout seul s'il existe une nouvelle version (au démarrage puis toutes les 6 h) et te prévient avec une bulle. Clique alors sur l'icône 👁 → **Mettre à jour vers vX…**. Tu peux aussi vérifier à la main avec **Rechercher les mises à jour**. Ta clé et tes réglages sont conservés.
+Rien à faire : Kapte vérifie au démarrage puis toutes les 6 h s'il existe une nouvelle version, l'installe tout seul (jamais pendant une analyse) et te le dit avec une petite bulle. Ta clé et tes réglages sont conservés. Pour vérifier tout de suite : icône 👁 → **Rechercher les mises à jour**.
 
 ## Désinstaller
 
@@ -56,6 +56,16 @@ Chaque capture est envoyée à Google pour analyse. Avec la clé gratuite, Googl
 ## Ça ne marche pas ?
 
 - **Rien ne s'affiche après une capture** : vérifie que tes captures arrivent bien dans le dossier `Screenshots` et pas sur le Bureau (Cmd + Shift + 5 → Options → Autre emplacement… → Screenshots).
-- **L'icône 👁 a disparu** : tu as cliqué sur « Quitter ». Elle revient au prochain redémarrage, ou relance l'installation.
+- **L'icône 👁 a disparu** : tu as cliqué sur « Quitter ». Rouvre **Kapte** (dossier Applications de ton dossier perso), ou redémarre le Mac.
 - **Bulle « Erreur : … »** : Gemini est surchargé ou la clé ne marche plus. Réessaie plus tard, ou supprime `~/.kapte/config.json` et relance l'installation pour remettre une clé.
-- Le détail des erreurs est dans `~/.kapte/error.log`.
+- Le détail (captures, réponses, erreurs) est dans `~/.kapte/kapte.log`.
+
+## Pour les développeurs
+
+L'app est en Swift (AppKit, sans dépendance), dans `App/`.
+
+- **Compiler** : `./build.sh` → `build/Kapte.app` et `build/Kapte.zip` (Xcode requis).
+- **Tester sans toucher à l'installation** : `KAPTE_DEV=1 build/Kapte.app/Contents/MacOS/Kapte` (arrête d'abord le service : `launchctl bootout gui/$(id -u)/com.kapte`).
+- **Publier une version** : change le numéro dans `VERSION`, commit, puis `git tag vX.Y.Z && git push --tags`. GitHub compile l'app et crée la release ; les Kapte installés se mettent à jour tout seuls.
+
+`kapte.py`, `overlay.js`, `menubar.js` et `update.sh` sont les restes de la v1 (Python) : ils ne servent qu'à faire migrer automatiquement les anciennes installations vers l'app.
