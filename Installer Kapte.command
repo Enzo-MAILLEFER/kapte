@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installe Kapte : double-clic sur ce fichier (ou : bash "Installer Kapte.command").
 # Peut être relancé sans risque (la clé Gemini et les réglages sont conservés).
-# KAPTE_UNATTENDED=1 : installation sans question (utilisée par la migration depuis la v1).
+# KAPTE_UNATTENDED=1 : installation sans question.
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
 DEST="$HOME/.kapte"
@@ -41,29 +41,9 @@ if [ ! -d "$APP_SRC" ]; then
   APP_SRC="$TMP/Kapte/Kapte.app"
 fi
 
-# 2. On arrête la version en cours (et les anciennes) avant de remplacer
+# 2. On arrête la version en cours avant de la remplacer
 mkdir -p "$DEST" "$APPS" "$LA"
-for L in com.kapte com.kapte.menubar com.screencoach com.screencoach.menubar; do
-  launchctl bootout "gui/$UID_NUM/$L" >/dev/null 2>&1
-done
-pkill -f "/.kapte/menubar.js" >/dev/null 2>&1
-pkill -f "/.screen-coach/menubar.js" >/dev/null 2>&1
-
-# Ancienne version « Screen Coach » : on reprend la config puis on la retire
-OLD="$HOME/.screen-coach"
-if [ -d "$OLD" ]; then
-  [ -f "$DEST/config.json" ] || cp "$OLD/config.json" "$DEST/config.json" 2>/dev/null
-  rm -f "$LA/com.screencoach.plist" "$LA/com.screencoach.menubar.plist"
-  rm -rf "$OLD"
-  echo "✅ Ancienne version (Screen Coach) remplacée, réglages conservés."
-fi
-# Ancienne version Python de Kapte (v1) : on garde config.json et la pause, on retire le reste
-if [ -f "$DEST/kapte.py" ] || [ -f "$LA/com.kapte.menubar.plist" ]; then
-  rm -f "$LA/com.kapte.menubar.plist"
-  ( cd "$DEST" && rm -rf kapte.py overlay.js menubar.js update.sh VERSION notified_version \
-      out.log error.log menubar.log update.log __pycache__ )
-  echo "✅ Ancienne version de Kapte (Python) remplacée, réglages conservés."
-fi
+launchctl bootout "gui/$UID_NUM/com.kapte" >/dev/null 2>&1
 
 rm -rf "$APPS/Kapte.app"
 ditto "$APP_SRC" "$APPS/Kapte.app"

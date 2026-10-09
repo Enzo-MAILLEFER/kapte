@@ -71,5 +71,3 @@ L'app est en Swift (AppKit, sans dépendance), dans `App/`.
 - **Compiler** : `./build.sh` → `build/Kapte.app` et `build/Kapte.zip` (Xcode requis).
 - **Tester sans toucher à l'installation** : `KAPTE_DEV=1 build/Kapte.app/Contents/MacOS/Kapte` (arrête d'abord le service : `launchctl bootout gui/$(id -u)/com.kapte`).
 - **Publier une version** : change le numéro dans `VERSION`, commit, puis `git tag vX.Y.Z && git push --tags`. GitHub compile l'app et crée la release ; les Kapte installés se mettent à jour tout seuls.
-
-`kapte.py`, `overlay.js`, `menubar.js` et `update.sh` sont les restes de la v1 (Python) : ils ne servent qu'à faire migrer automatiquement les anciennes installations vers l'app.

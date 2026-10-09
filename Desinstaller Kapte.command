@@ -20,11 +20,8 @@ if [ "$ANSWER" != "o" ] && [ "$ANSWER" != "O" ]; then
   exit 0
 fi
 
-for L in com.kapte com.kapte.menubar; do
-  launchctl bootout "gui/$UID_NUM/$L" >/dev/null 2>&1
-  rm -f "$LA/$L.plist"
-done
-pkill -f "$DEST/menubar.js" >/dev/null 2>&1
+launchctl bootout "gui/$UID_NUM/com.kapte" >/dev/null 2>&1
+rm -f "$LA/com.kapte.plist"
 rm -rf "$DEST" "$HOME/Applications/Kapte.app"
 defaults delete com.apple.screencapture location >/dev/null 2>&1
 
