@@ -5,7 +5,6 @@ import Carbon.HIToolbox
 /// Échap la cache : la touche n'est réservée que pendant que la bulle est visible
 /// (raccourci global Carbon, aucune permission d'accessibilité nécessaire).
 final class Bubble {
-    private static weak var current: Bubble?
     private var escapeHotKey: EventHotKeyRef?
 
     private let panel: NSPanel
@@ -42,17 +41,9 @@ final class Bubble {
 
         background.addSubview(label)
         panel.contentView = background
-
-        Bubble.current = self
-        var pressed = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        InstallEventHandler(GetApplicationEventTarget(), { _, _, _ in
-            DispatchQueue.main.async {
-                log("Bulle cachée (Échap)")
-                Bubble.current?.hide()
-            }
-            return noErr
-        }, 1, &pressed, nil, nil)
     }
+
+    var isVisible: Bool { panel.isVisible }
 
     /// Cache la bulle tout de suite (touche Échap).
     func hide() {
@@ -103,13 +94,14 @@ final class Bubble {
 
     private func reserveEscape() {
         guard escapeHotKey == nil else { return }
-        let id = EventHotKeyID(signature: OSType(0x4B415054), id: 1)  // 'KAPT'
-        let status = RegisterEventHotKey(UInt32(kVK_Escape), 0, id, GetApplicationEventTarget(), 0, &escapeHotKey)
-        if status != noErr { log("Touche Échap indisponible (erreur \(status))") }
+        escapeHotKey = HotKeys.register(kVK_Escape, name: "Échap") { [weak self] in
+            log("Bulle cachée (Échap)")
+            self?.hide()
+        }
     }
 
     private func releaseEscape() {
-        if let escapeHotKey { UnregisterEventHotKey(escapeHotKey) }
+        HotKeys.unregister(escapeHotKey)
         escapeHotKey = nil
     }
 

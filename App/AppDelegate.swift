@@ -1,9 +1,11 @@
 import AppKit
+import Carbon.HIToolbox
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let bubble = Bubble()
     private let watcher = Watcher()
     private let updater = Updater()
+    private let history = History()
 
     private var statusItem: NSStatusItem!
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -11,6 +13,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var queue: [URL] = []
     private var busy = false
+
+    /// Réponse de l'historique affichée (0 = la plus récente), nil = pas en train de défiler.
+    private var browsing: Int?
+    private var historyKeys: [EventHotKeyRef] = []
 
     private var isPaused: Bool { FileManager.default.fileExists(atPath: pauseFlag.path) }
 
@@ -77,6 +83,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.removeItem(at: url)
                     self.watcher.forget(url)
                     log("Réponse : \(answer)")
+                    self.history.add(answer)
+                    self.browsing = nil
                     if cfg.copyAnswer {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(answer, forType: .string)
@@ -89,6 +97,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.finish()
             }
         }
+    }
+
+    // MARK: - Historique (⌃⌥← plus ancienne, ⌃⌥→ plus récente)
+
+    private func browse(older: Bool) {
+        guard !busy, !isPaused, !history.answers.isEmpty else { return }
+        let last = history.answers.count - 1
+        let index: Int
+        if let current = browsing, bubble.isVisible {
+            index = older ? min(current + 1, last) : max(current - 1, 0)
+        } else {
+            index = 0  // la bulle était cachée : on repart de la dernière réponse
+        }
+        browsing = index
+        let cfg = Config.load()
+        bubble.show("\(index + 1)/\(last + 1) · \(history.answers[index])", seconds: cfg.displaySeconds)
+    }
+
+    /// Les flèches ne sont réservées que quand Kapte est activé.
+    private func updateHistoryKeys() {
+        historyKeys.forEach { HotKeys.unregister($0) }
+        historyKeys = []
+        guard !isPaused else { return }
+        let mods = controlKey | optionKey
+        historyKeys = [
+            HotKeys.register(kVK_LeftArrow, modifiers: mods, name: "⌃⌥←") { [weak self] in self?.browse(older: true) },
+            HotKeys.register(kVK_RightArrow, modifiers: mods, name: "⌃⌥→") { [weak self] in self?.browse(older: false) },
+        ].compactMap { $0 }
     }
 
     private func finish() {
@@ -139,6 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.alphaValue = paused ? 0.5 : 1
         statusLine.title = "\(paused ? "Kapte : en pause" : "Kapte : activé")  ·  v\(updater.currentVersion)"
         toggleItem.title = paused ? "Activer" : "Mettre en pause"
+        updateHistoryKeys()
     }
 
     @objc private func togglePause() {

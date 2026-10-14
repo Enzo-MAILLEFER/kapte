@@ -15,6 +15,11 @@ enum Gemini {
         Donne uniquement l'information utile, en tutoyant, \(cfg.maxWords) mots maximum,
         sans markdown :
         - si l'écran pose une question (quiz, exercice, formulaire…) : donne seulement la réponse ;
+        - s'il y a plusieurs questions : réponds à chacune, une par ligne, précédée de son
+          numéro (« 1. … »), sans en sauter ; la limite de mots vaut alors par réponse ;
+        - si la question est ouverte (exercice de langue, conversation, question personnelle) :
+          invente une réponse naturelle et plausible, comme le ferait un élève ;
+        - ne recopie jamais la question ni le texte de l'écran à la place d'une réponse ;
         - sinon : seulement l'explication ou l'action utile, en une phrase.
         Langue : réponds dans la langue de la question affichée, avec l'orthographe usuelle
         de cette langue pour les noms propres (ex. en français : Kiev, Pékin, Londres ;
@@ -24,6 +29,7 @@ enum Gemini {
         Rien d'autre : pas d'introduction, pas de commentaire, pas d'encouragement,
         pas de description de l'écran, pas de phrase de conclusion.
         Exemples : « Framboise » · « Il manque un point-virgule ligne 12. »
+        · « ¿Qué van a tomar de primero? » → « De primero, voy a tomar una ensalada mixta. »
         \(cfg.extraInstructions)
         """
     }
