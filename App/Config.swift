@@ -8,6 +8,10 @@ let launchAgentLabel = "com.kapte"
 
 /// Réglages lus dans ~/.kapte/config.json (relus à chaque capture).
 struct Config {
+    var provider = "gemini"     // "gemini" ou "claude"
+    var claudeKey = ""
+    var claudeModel = "claude-haiku-5-5"
+    var claudeEffort = "low"    // réflexion de Claude : low, medium, high
     var geminiKey = ""
     var geminiModel = "gemini-3.5-flash-lite"
     var fallbackModel = "gemini-flash-lite-latest"  // essayé en parallèle si le 1er est lent
@@ -24,6 +28,10 @@ struct Config {
             log("Config illisible ou absente : \(configURL.path)")
             return c
         }
+        if let v = json["provider"] as? String, !v.isEmpty { c.provider = v }
+        if let v = json["claude_api_key"] as? String { c.claudeKey = v }
+        if let v = json["claude_model"] as? String, !v.isEmpty { c.claudeModel = v }
+        if let v = json["claude_effort"] as? String, !v.isEmpty { c.claudeEffort = v }
         if let v = json["gemini_api_key"] as? String { c.geminiKey = v }
         if let v = json["gemini_model"] as? String, !v.isEmpty { c.geminiModel = v }
         if let v = json["gemini_fallback_model"] as? String { c.fallbackModel = v }
@@ -35,8 +43,15 @@ struct Config {
         if c.geminiKey.isEmpty, let env = ProcessInfo.processInfo.environment["GEMINI_API_KEY"] {
             c.geminiKey = env
         }
+        if c.claudeKey.isEmpty, let env = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"] {
+            c.claudeKey = env
+        }
         return c
     }
+
+    /// Claude seulement si on l'a choisi ET qu'on a une clé : sinon Gemini, comme avant.
+    var usesClaude: Bool { provider == "claude" && !claudeKey.isEmpty }
+    var apiKey: String { usesClaude ? claudeKey : geminiKey }
 }
 
 private let logDateFormatter: DateFormatter = {

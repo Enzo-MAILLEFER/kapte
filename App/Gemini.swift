@@ -7,7 +7,8 @@ struct KapteError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-/// Envoie une capture à l'API Gemini et renvoie la réponse (sur le thread principal).
+/// Envoie une capture à l'API Gemini (ou Claude, selon `provider`) et renvoie la réponse
+/// (sur le thread principal).
 enum Gemini {
     /// Essai en parallèle si Gemini est lent (coupé par le vérificateur de prompt, pour le quota).
     static var parallelAttempts = true
@@ -101,6 +102,9 @@ enum Gemini {
     /// `prepareImage`), envoyées dans la même requête pour les questions dont le texte est avant.
     static func analyze(image: String, context: [String] = [], cfg: Config,
                         completion: @escaping (Result<String, Error>) -> Void) {
+        if cfg.usesClaude {
+            return analyzeWithClaude(image: image, context: context, cfg: cfg, completion: completion)
+        }
         var parts: [[String: Any]] = []
         for old in context { parts.append(["inline_data": ["mime_type": "image/jpeg", "data": old]]) }
         parts.append(["inline_data": ["mime_type": "image/jpeg", "data": image]])
@@ -115,7 +119,36 @@ enum Gemini {
         if !cfg.fallbackModel.isEmpty && cfg.fallbackModel != cfg.geminiModel {
             models.append(cfg.fallbackModel)
         }
-        Attempts(key: cfg.geminiKey, payload: payload, models: models, completion: completion).launch()
+        Attempts(models: models, request: { model in
+            let path = model.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? model
+            var request = URLRequest(url: URL(string:
+                "https://generativelanguage.googleapis.com/v1beta/models/\(path):generateContent")!)
+            request.setValue(cfg.geminiKey, forHTTPHeaderField: "x-goog-api-key")
+            request.httpBody = payload
+            return request
+        }, parse: parse, completion: completion).launch()
+    }
+
+    private static func analyzeWithClaude(image: String, context: [String], cfg: Config,
+                                          completion: @escaping (Result<String, Error>) -> Void) {
+        var content: [[String: Any]] = (context + [image]).map {
+            ["type": "image", "source": ["type": "base64", "media_type": "image/jpeg", "data": $0]]
+        }
+        content.append(["type": "text", "text": prompt(cfg, withContext: !context.isEmpty)])
+        let body: [String: Any] = [
+            "model": cfg.claudeModel,
+            "max_tokens": 4000,  // réflexion comprise
+            "output_config": ["effort": cfg.claudeEffort],  // low par défaut : réfléchit sans ralentir la bulle
+            "messages": [["role": "user", "content": content]],
+        ]
+        let payload = (try? JSONSerialization.data(withJSONObject: body)) ?? Data()
+        Attempts(models: [cfg.claudeModel], request: { _ in
+            var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+            request.setValue(cfg.claudeKey, forHTTPHeaderField: "x-api-key")
+            request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            request.httpBody = payload
+            return request
+        }, parse: parseClaude, completion: completion).launch()
     }
 
     /// Analyse la réponse HTTP : texte, ou erreur (temporaire = on peut réessayer).
@@ -147,12 +180,43 @@ enum Gemini {
     }
 }
 
+extension Gemini {
+    fileprivate static func parseClaude(data: Data?, response: URLResponse?, error: Error?)
+        -> Result<String, AttemptError> {
+        if let error {
+            return .failure(AttemptError(message: "Claude injoignable : \(error.localizedDescription)",
+                                         temporary: true))
+        }
+        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let text = String(decoding: data ?? Data(), as: UTF8.self)
+        guard code == 200 else {
+            // 529 surcharge, 429 limite de débit
+            return .failure(AttemptError(message: "Claude \(code) : \(text.prefix(200))",
+                                         temporary: [408, 429, 500, 502, 503, 504, 529].contains(code)))
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data ?? Data()) as? [String: Any],
+              let content = json["content"] as? [[String: Any]] else {
+            return .failure(AttemptError(message: "réponse de Claude inattendue : \(text.prefix(200))",
+                                         temporary: true))
+        }
+        if json["stop_reason"] as? String == "refusal" {
+            return .failure(AttemptError(message: "Claude a refusé de répondre", temporary: false))
+        }
+        let answer = content.filter { $0["type"] as? String == "text" }
+            .compactMap { $0["text"] as? String }.joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return answer.isEmpty
+            ? .failure(AttemptError(message: "Claude n'a rien répondu", temporary: true))
+            : .success(answer)
+    }
+}
+
 fileprivate struct AttemptError: Error {
     let message: String
     let temporary: Bool
 }
 
-/// Essais d'une analyse. Si Gemini ne répond pas en 5 s, un 2e essai part en parallèle
+/// Essais d'une analyse. Si l'API ne répond pas en 5 s, un 2e essai part en parallèle
 /// (en alternant avec le modèle de secours) et la première réponse gagne : les lenteurs
 /// ponctuelles de Google ne bloquent plus la bulle 30 s ou plus.
 private final class Attempts {
@@ -160,21 +224,23 @@ private final class Attempts {
     static let hedgeDelay = 5.0     // secondes sans réponse avant un essai en parallèle
     static let timeout = 30.0       // abandon d'un essai (Gemini met parfois plus de 15 s)
 
-    private let key: String
-    private let payload: Data
     private let models: [String]
+    private let request: (String) -> URLRequest
+    private let parse: (Data?, URLResponse?, Error?) -> Result<String, AttemptError>
     private let completion: (Result<String, Error>) -> Void
 
     private var launched = 0
     private var inFlight = 0
     private var finished = false
     private var tasks: [URLSessionDataTask] = []
-    private var lastError = "Gemini n'a pas répondu"
+    private var lastError = "pas de réponse"
 
-    init(key: String, payload: Data, models: [String], completion: @escaping (Result<String, Error>) -> Void) {
-        self.key = key
-        self.payload = payload
+    init(models: [String], request: @escaping (String) -> URLRequest,
+         parse: @escaping (Data?, URLResponse?, Error?) -> Result<String, AttemptError>,
+         completion: @escaping (Result<String, Error>) -> Void) {
         self.models = models
+        self.request = request
+        self.parse = parse
         self.completion = completion
     }
 
@@ -185,18 +251,14 @@ private final class Attempts {
         inFlight += 1
         let number = launched
 
-        let path = model.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? model
-        var request = URLRequest(url: URL(string:
-            "https://generativelanguage.googleapis.com/v1beta/models/\(path):generateContent")!)
+        var request = self.request(model)
         request.httpMethod = "POST"
         request.timeoutInterval = Attempts.timeout
         request.setValue("application/json", forHTTPHeaderField: "content-type")
-        request.setValue(key, forHTTPHeaderField: "x-goog-api-key")
-        request.httpBody = payload
 
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                self.handle(Gemini.parse(data: data, response: response, error: error), model: model)
+                self.handle(self.parse(data, response, error), model: model)
             }
         }
         tasks.append(task)
@@ -205,7 +267,7 @@ private final class Attempts {
         guard Gemini.parallelAttempts else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + Attempts.hedgeDelay) {
             if !self.finished && self.launched == number && number < Attempts.maxLaunches {
-                log("Gemini lent (\(model)), essai en parallèle")
+                log("\(model) lent, essai en parallèle")
                 self.launch()
             }
         }
@@ -219,7 +281,7 @@ private final class Attempts {
             finish(.success(answer))
         case .failure(let error):
             lastError = error.message
-            log("Gemini (\(model)) : \(error.message)")
+            log("\(model) : \(error.message)")
             if !error.temporary {
                 finish(.failure(KapteError(error.message)))
             } else if inFlight == 0 {

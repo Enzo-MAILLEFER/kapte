@@ -60,9 +60,15 @@ let images = ((try? FileManager.default.contentsOfDirectory(at: dossier.appendin
               || choisies.contains($0.deletingPathExtension().lastPathComponent) }
     .sorted { $0.lastPathComponent < $1.lastPathComponent }
 
-let cfg = Config.load()
-guard !cfg.geminiKey.isEmpty else {
-    print("Clé Gemini introuvable dans ~/.kapte/config.json")
+var cfg = Config.load()
+// essayer un autre fournisseur ou modèle sans toucher à la config : KAPTE_PROVIDER=claude KAPTE_MODEL=…
+if let fournisseur = ProcessInfo.processInfo.environment["KAPTE_PROVIDER"] { cfg.provider = fournisseur }
+if let modele = ProcessInfo.processInfo.environment["KAPTE_MODEL"] {
+    if cfg.usesClaude { cfg.claudeModel = modele } else { cfg.geminiModel = modele }
+}
+if let effort = ProcessInfo.processInfo.environment["KAPTE_EFFORT"] { cfg.claudeEffort = effort }
+guard !cfg.apiKey.isEmpty else {
+    print("Clé \(cfg.usesClaude ? "Claude (claude_api_key)" : "Gemini") introuvable dans ~/.kapte/config.json")
     exit(1)
 }
 

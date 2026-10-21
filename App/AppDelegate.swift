@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard ready else { return self.finish() }
             log("Nouvelle capture : \(url.lastPathComponent)")
             let cfg = Config.load()
-            guard !cfg.geminiKey.isEmpty else {
+            guard !cfg.apiKey.isEmpty else {
                 self.bubble.show("Clé Gemini manquante : relance l'installateur Kapte.", seconds: 8)
                 return self.finish()
             }
