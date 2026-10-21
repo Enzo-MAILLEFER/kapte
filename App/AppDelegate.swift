@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let watcher = Watcher()
     private let updater = Updater()
     private let history = History()
+    private let selection = Selection()
     private var recentCaptures: [(image: String, date: Date)] = []
     static let contextDelay = 180.0  // secondes pendant lesquelles une capture sert de contexte aux suivantes
     static let contextCount = 2      // captures précédentes envoyées avec la nouvelle (même requête)
@@ -113,11 +114,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Historique (⌃⌥← plus ancienne, ⌃⌥→ plus récente)
+    // MARK: - Capture Kapte (⌥ Espace)
+
+    private func startSelection() {
+        guard !isPaused else { return }
+        if selection.isActive { return selection.cancel() }  // ⌥ Espace une 2e fois = annuler
+        guard CGPreflightScreenCaptureAccess() else {
+            CGRequestScreenCaptureAccess()  // ajoute Kapte à la liste des Réglages Système
+            bubble.show("Autorise Kapte : Réglages Système → Confidentialité et sécurité → " +
+                        "Enregistrement de l'écran, puis rouvre Kapte.", seconds: 10)
+            return
+        }
+        bubble.hide()  // libère Échap et évite que la bulle soit sur la capture
+        selection.start { [weak self] url in self?.enqueue(url) }
+    }
+
+    // MARK: - Historique (⌥↑ plus ancienne, ⌥↓ plus récente)
 
     private func browse(older: Bool) {
         guard !busy, !isPaused, !history.answers.isEmpty else { return }
         let last = history.answers.count - 1
+        // ⌥↓ sur la réponse la plus récente : on cache la bulle (plus près qu'Échap)
+        if !older, bubble.isVisible, (browsing ?? 0) == 0 { return bubble.hide() }
         let index: Int
         if let current = browsing, bubble.isVisible {
             index = older ? min(current + 1, last) : max(current - 1, 0)
@@ -129,15 +147,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bubble.show("\(index + 1)/\(last + 1) · \(history.answers[index])", seconds: cfg.displaySeconds)
     }
 
-    /// Les flèches ne sont réservées que quand Kapte est activé.
+    /// Les raccourcis ne sont réservés que quand Kapte est activé.
     private func updateHistoryKeys() {
         historyKeys.forEach { HotKeys.unregister($0) }
         historyKeys = []
         guard !isPaused else { return }
-        let mods = controlKey | optionKey
+        let mods = optionKey
         historyKeys = [
-            HotKeys.register(kVK_LeftArrow, modifiers: mods, name: "⌃⌥←") { [weak self] in self?.browse(older: true) },
-            HotKeys.register(kVK_RightArrow, modifiers: mods, name: "⌃⌥→") { [weak self] in self?.browse(older: false) },
+            HotKeys.register(kVK_UpArrow, modifiers: mods, name: "⌥↑") { [weak self] in self?.browse(older: true) },
+            HotKeys.register(kVK_DownArrow, modifiers: mods, name: "⌥↓") { [weak self] in self?.browse(older: false) },
+            HotKeys.register(kVK_Space, modifiers: mods, name: "⌥ Espace") { [weak self] in self?.startSelection() },
         ].compactMap { $0 }
     }
 
@@ -190,6 +209,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusLine.title = "\(paused ? "Kapte : en pause" : "Kapte : activé")  ·  v\(updater.currentVersion)"
         toggleItem.title = paused ? "Activer" : "Mettre en pause"
         updateHistoryKeys()
+        setScreenshotThumbnail(paused)
+    }
+
+    /// La vignette de macOS en bas à droite retarde l'écriture du fichier de ~5 s :
+    /// on la coupe tant que Kapte est activé, et on la remet en pause.
+    private func setScreenshotThumbnail(_ shown: Bool) {
+        runCommand("/usr/bin/defaults", ["write", "com.apple.screencapture", "show-thumbnail", "-bool", shown ? "true" : "false"])
     }
 
     @objc private func togglePause() {
@@ -197,6 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? FileManager.default.removeItem(at: pauseFlag)
         } else {
             FileManager.default.createFile(atPath: pauseFlag.path, contents: nil)
+            selection.cancel()
         }
         refreshMenu()
     }
@@ -209,6 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Sans icône on ne verrait plus l'état : quitter = mettre en pause.
         // L'icône revient à la prochaine ouverture de session (ou en rouvrant Kapte.app).
         FileManager.default.createFile(atPath: pauseFlag.path, contents: nil)
+        setScreenshotThumbnail(true)
         NSApp.terminate(nil)
     }
 }

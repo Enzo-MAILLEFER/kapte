@@ -24,6 +24,7 @@ launchctl bootout "gui/$UID_NUM/com.kapte" >/dev/null 2>&1
 rm -f "$LA/com.kapte.plist"
 rm -rf "$DEST" "$HOME/Applications/Kapte.app"
 defaults delete com.apple.screencapture location >/dev/null 2>&1
+defaults delete com.apple.screencapture show-thumbnail >/dev/null 2>&1
 
 echo
 echo "✅ Kapte est désinstallé."
