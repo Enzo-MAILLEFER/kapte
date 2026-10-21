@@ -26,7 +26,7 @@ Kapte s'installe dans le dossier `Applications` de ton dossier perso et démarre
 ## Utiliser
 
 - **Capture** : Cmd + Shift + 4 (zone) ou Cmd + Shift + 3 (écran entier). Trois petits points apparaissent en bas à gauche pendant l'analyse, puis la réponse.
-- **Capture discrète** : **⌥ Espace** (Option + Espace), puis glisse pour choisir la zone : juste un trait fin, sans croix, coordonnées, son ni vignette. Échap, un simple clic ou ⌥ Espace à nouveau annule. La première fois, autorise Kapte dans Réglages Système → Confidentialité et sécurité → **Enregistrement de l'écran**, puis rouvre Kapte (à refaire après une mise à jour si ⌥ Espace redemande l'autorisation).
+- **Capture discrète** : **⌥ Espace** (Option + Espace), puis glisse pour choisir la zone : seuls 4 petits coins discrets s'affichent, sans croix, coordonnées, son ni vignette. Échap, un simple clic ou ⌥ Espace à nouveau annule. La première fois, autorise Kapte dans Réglages Système → Confidentialité et sécurité → **Enregistrement de l'écran**, puis rouvre Kapte (à refaire après une mise à jour si ⌥ Espace redemande l'autorisation).
 - **La réponse est copiée** dans le presse-papiers : Cmd + V pour la coller.
 - **Cacher la bulle** : **⌥↓** (sur la dernière réponse) ou **Échap** (la touche n'est prise par Kapte que pendant que la bulle est affichée).
 - **Revoir les anciennes réponses** : **⌥↑** (Option + flèche du haut) remonte dans l'historique, **⌥↓** revient vers les plus récentes (seulement quand Kapte est activé ; 30 dernières réponses).

@@ -99,9 +99,17 @@ private final class SelectionView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let rect = selection else { return }
-        // Gris à moitié transparent : visible sur fond clair comme sombre, sans attirer l'œil
-        NSColor(calibratedWhite: 0.5, alpha: 0.5).setStroke()
-        let path = NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5))
+        // Seulement les 4 coins, gris clair à moitié transparent : la zone reste lisible sans cadre voyant
+        let r = rect.insetBy(dx: 0.5, dy: 0.5)
+        let len = min(8, r.width / 2, r.height / 2)
+        let path = NSBezierPath()
+        for (corner, dx, dy) in [(NSPoint(x: r.minX, y: r.minY), len, len), (NSPoint(x: r.maxX, y: r.minY), -len, len),
+                                 (NSPoint(x: r.minX, y: r.maxY), len, -len), (NSPoint(x: r.maxX, y: r.maxY), -len, -len)] {
+            path.move(to: NSPoint(x: corner.x + dx, y: corner.y))
+            path.line(to: corner)
+            path.line(to: NSPoint(x: corner.x, y: corner.y + dy))
+        }
+        NSColor(calibratedWhite: 0.6, alpha: 0.45).setStroke()
         path.lineWidth = 1
         path.stroke()
     }
