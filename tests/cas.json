@@ -180,6 +180,12 @@
       "unas",
       "los",
       "una"
+    ],
+    "interdit": [
+      "Sabes",
+      "prefiero",
+      "encontraste",
+      "semana"
     ]
   },
   {
@@ -241,7 +247,12 @@
       "42": "girar",
       "43": "quinientos"
     },
-    "contient": []
+    "contient": [],
+    "interdit": [
+      "dedicas",
+      "horario",
+      "soltera"
+    ]
   },
   {
     "capture": "quiz-q45-49.png",

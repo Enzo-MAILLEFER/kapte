@@ -49,9 +49,11 @@ enum Gemini {
           option (« Falso, les gusta usar la alberca en el verano », « V », « F »), sans le
           reformuler ; cases à cocher (carrés) : il peut y avoir plusieurs bonnes options,
           donne-les toutes (« piso · casa ») ;
-        - menus déroulants ou colonnes à relier : pour chaque ligne, dans l'ordre, donne le
-          début de la ligne puis le choix à faire, avec son numéro si la colonne d'options est
-          numérotée (« ir 4 volver · entrar 5 salir ») ; si les options du menu ne sont pas
+        - menus déroulants ou colonnes à relier : pour chaque ligne, dans l'ordre, donne
+          seulement le choix à faire, avec son numéro entre parenthèses si la colonne d'options
+          est numérotée (« el (1) · un (2) · unas (4) ») ; ne recopie jamais la phrase de la
+          ligne : seulement si la ligne est un seul mot ou deux, mets ce mot devant
+          (« ir volver (4) · entrar salir (5) ») ; si les options du menu ne sont pas
           visibles, donne le mot attendu (« arriba abajo ») ; trous numérotés « 1)… 2)… » :
           numéro du trou puis le mot (« 1 a · 2 de ») ;
         - questions sur un texte (lecture, correo, mensajes) : base-toi uniquement sur ce que
