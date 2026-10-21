@@ -9,23 +9,68 @@ struct KapteError: LocalizedError {
 
 /// Envoie une capture à l'API Gemini et renvoie la réponse (sur le thread principal).
 enum Gemini {
-    static func prompt(_ cfg: Config) -> String {
-        """
-        Voici une capture d'écran de l'utilisateur.
+    /// Essai en parallèle si Gemini est lent (coupé par le vérificateur de prompt, pour le quota).
+    static var parallelAttempts = true
+
+    static func prompt(_ cfg: Config, withContext: Bool = false) -> String {
+        let context = withContext ? """
+            Les premières images sont les captures précédentes, fournies seulement comme contexte
+            (texte de lecture, messages, consignes ou liste de mots qui concernent les questions
+            suivantes). Ne réponds qu'aux questions de la dernière image, jamais à celles des
+            précédentes (sauf si la dernière n'a aucune question).
+
+            """ : ""
+        return """
+        \(context)Voici une capture d'écran de l'utilisateur.
         Donne uniquement l'information utile, en tutoyant, \(cfg.maxWords) mots maximum,
         sans markdown :
         - si l'écran pose une question (quiz, exercice, formulaire…) : donne seulement la réponse ;
-        - s'il y a plusieurs questions : réponds à chacune, une par ligne, précédée de son
-          numéro (« 1. … »), sans en sauter ; la limite de mots vaut alors par réponse ;
+        - réponds seulement aux questions et trous qui ont un endroit où répondre (rond, case,
+          menu déroulant, champ) ; un texte à trous affiché au-dessus sans menu n'est que du
+          contexte. Numérote avec les numéros affichés dans le quiz (« 17. doble »), jamais 1, 2, 3
+          à la place ;
+        - choisis toujours parmi les options proposées, jamais un mot qui n'y figure pas ;
+          vérifie la grammaire avant de choisir (accord, genre, nombre, préposition : « desde las
+          nueve hasta la una », « de tres a cinco », « por la tarde ») ;
+        - s'il y a plusieurs questions : réponds à chacune, précédée de son numéro ou de sa
+          lettre, sans en sauter ; la limite de mots vaut alors par réponse. Réponses courtes
+          (un mot ou quelques mots) : toutes à la suite sur une seule ligne, séparées par « · »
+          (« a veintisiete · b cincuenta y dos · c ciento dieciséis ») ; réponses qui sont
+          des phrases : une par ligne (« 1. … ») ;
+        - texte suivi à trous sans numéros (lettre, paragraphe) : donne seulement les mots à
+          mettre dans les trous vides, dans l'ordre, numérotés 1, 2, 3… à la suite
+          (« 1 Madrid · 2 mis amigos »), sans recopier le texte autour ni les trous déjà remplis ;
+        - exercice numéroté où il faut réécrire ou transformer une phrase : donne seulement la
+          phrase transformée, entière, mots imprimés compris ; si un exemple est déjà fait (en
+          général le 1), c'est le modèle : applique exactement la même transformation à chaque
+          phrase (ex. 1 au pluriel → toutes au pluriel) ;
+        - question à choix (ronds, V/F, Verdadero/Falso) : recopie le texte exact de la bonne
+          option (« Falso, les gusta usar la alberca en el verano », « V », « F »), sans le
+          reformuler ; cases à cocher (carrés) : il peut y avoir plusieurs bonnes options,
+          donne-les toutes (« piso · casa ») ;
+        - menus déroulants ou colonnes à relier : pour chaque ligne, dans l'ordre, donne le
+          début de la ligne puis le choix à faire, avec son numéro si la colonne d'options est
+          numérotée (« ir 4 volver · entrar 5 salir ») ; si les options du menu ne sont pas
+          visibles, donne le mot attendu (« arriba abajo ») ; trous numérotés « 1)… 2)… » :
+          numéro du trou puis le mot (« 1 a · 2 de ») ;
+        - questions sur un texte (lecture, correo, mensajes) : base-toi uniquement sur ce que
+          dit le texte, lu attentivement ; si une option dit « No lo dice » et que le texte ne
+          donne pas l'information, c'est elle ; un détail faux (lieu, jour, ordre, raison)
+          rend l'affirmation fausse ;
+        - question audio (« Escucha… ») : tu ne peux pas l'entendre, choisis l'option la plus
+          probable sans le signaler ;
+        - question d'orthographe (même mot écrit de plusieurs façons) : choisis la forme
+          correcte, avec sa majuscule telle qu'affichée ;
         - si la question est ouverte (exercice de langue, conversation, question personnelle) :
           invente une réponse naturelle et plausible, comme le ferait un élève ;
         - ne recopie jamais la question ni le texte de l'écran à la place d'une réponse ;
         - sinon : seulement l'explication ou l'action utile, en une phrase.
-        Langue : réponds dans la langue de la question affichée, avec l'orthographe usuelle
+        Langue : réponds dans la langue de la question ou de l'exercice affiché (un exercice
+        sans consigne visible se fait dans la langue de ses mots), avec l'orthographe usuelle
         de cette langue pour les noms propres (ex. en français : Kiev, Pékin, Londres ;
         en anglais : Kyiv, Beijing, London), comme l'attendrait un quiz dans cette langue.
         Pour une traduction, réponds dans la langue cible demandée (« traduis en anglais »
-        → réponse en anglais). S'il n'y a pas de question, réponds en français.
+        → réponse en anglais). S'il n'y a ni question ni exercice, réponds en français.
         Rien d'autre : pas d'introduction, pas de commentaire, pas d'encouragement,
         pas de description de l'écran, pas de phrase de conclusion.
         Exemples : « Framboise » · « Il manque un point-virgule ligne 12. »
@@ -52,18 +97,19 @@ enum Gemini {
         return jpeg.base64EncodedString()
     }
 
-    static func analyze(_ url: URL, cfg: Config, completion: @escaping (Result<String, Error>) -> Void) {
-        let image: String
-        do {
-            image = try prepareImage(url)
-        } catch {
-            completion(.failure(error))
-            return
-        }
-        let body: [String: Any] = ["contents": [["parts": [
-            ["inline_data": ["mime_type": "image/jpeg", "data": image]],
-            ["text": prompt(cfg)],
-        ]]]]
+    /// `context` : captures précédentes, de la plus ancienne à la plus récente (JPEG base64, voir
+    /// `prepareImage`), envoyées dans la même requête pour les questions dont le texte est avant.
+    static func analyze(image: String, context: [String] = [], cfg: Config,
+                        completion: @escaping (Result<String, Error>) -> Void) {
+        var parts: [[String: Any]] = []
+        for old in context { parts.append(["inline_data": ["mime_type": "image/jpeg", "data": old]]) }
+        parts.append(["inline_data": ["mime_type": "image/jpeg", "data": image]])
+        parts.append(["text": prompt(cfg, withContext: !context.isEmpty)])
+        let body: [String: Any] = [
+            "contents": [["parts": parts]],
+            // un peu de réflexion : sans elle, le modèle se trompe sur les prépositions et accords
+            "generationConfig": ["thinkingConfig": ["thinkingLevel": "low"]],
+        ]
         let payload = (try? JSONSerialization.data(withJSONObject: body)) ?? Data()
         var models = [cfg.geminiModel]
         if !cfg.fallbackModel.isEmpty && cfg.fallbackModel != cfg.geminiModel {
@@ -112,7 +158,7 @@ fileprivate struct AttemptError: Error {
 private final class Attempts {
     static let maxLaunches = 4
     static let hedgeDelay = 5.0     // secondes sans réponse avant un essai en parallèle
-    static let timeout = 15.0       // abandon d'un essai
+    static let timeout = 30.0       // abandon d'un essai (Gemini met parfois plus de 15 s)
 
     private let key: String
     private let payload: Data
@@ -156,6 +202,7 @@ private final class Attempts {
         tasks.append(task)
         task.resume()
 
+        guard Gemini.parallelAttempts else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + Attempts.hedgeDelay) {
             if !self.finished && self.launched == number && number < Attempts.maxLaunches {
                 log("Gemini lent (\(model)), essai en parallèle")

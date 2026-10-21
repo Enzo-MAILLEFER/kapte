@@ -1,0 +1,264 @@
+[
+  {
+    "capture": "espagne.png",
+    "attendu": "les 5 réponses, numérotées",
+    "contient": [
+      "sur",
+      "ciudades"
+    ],
+    "lignes_max": 5
+  },
+  {
+    "capture": "hay-estar.png",
+    "attendu": "hay / está / están dans chaque trou (2 à 8), à la suite sur une ligne",
+    "reponses": {
+      "2": "están",
+      "3": "hay",
+      "4": "hay",
+      "5": "está",
+      "6": "están",
+      "7": "está",
+      "8": "hay"
+    },
+    "lignes_max": 1
+  },
+  {
+    "capture": "lettre.png",
+    "attendu": "seulement les mots à mettre dans les trous, numérotés, sans recopier le reste de la lettre",
+    "contient": [
+      "1"
+    ],
+    "interdit": [
+      "Hola",
+      "Mamá",
+      "Hasta pronto",
+      "Muchos besos"
+    ]
+  },
+  {
+    "capture": "nombres.png",
+    "attendu": "les 8 nombres en lettres (b–e, g–j), à la suite sur une ligne (langue libre : la capture n'a aucun mot)",
+    "contient": [
+      "b ",
+      "e ",
+      "g ",
+      "j "
+    ],
+    "lignes_max": 1
+  },
+  {
+    "capture": "prepositions.png",
+    "attendu": "a · a, en · desde, hasta · a, para · Por, de, a (« por la tarde », pas « en la tarde »)",
+    "reponses": {
+      "1": "a",
+      "2": "a",
+      "3": "desde",
+      "4": "a",
+      "5": "por"
+    }
+  },
+  {
+    "capture": "primero.png",
+    "attendu": "une vraie réponse en espagnol, pas la question recopiée",
+    "interdit": [
+      "¿Qué van a tomar"
+    ]
+  },
+  {
+    "capture": "quiz-q04-06.png",
+    "attendu": "4 et 5 audio (au hasard), 6 vecinos",
+    "reponses": {
+      "6": "vecinos"
+    }
+  },
+  {
+    "capture": "quiz-q07.png",
+    "attendu": "1 a · 2 de · 3 a · 4 en",
+    "contient": [
+      "a",
+      "de",
+      "en"
+    ],
+    "interdit": [
+      "desde",
+      "hasta",
+      "5 ",
+      "6 "
+    ]
+  },
+  {
+    "capture": "quiz-q08-09.png",
+    "attendu": "5 desde · 6 hasta · 7 a · 8 por · 9 de · 10 a ; contrarios : ir 4 volver, entrar 5 salir, dormirse 1, sentarse 2, empezar 3",
+    "contient": [
+      "desde",
+      "hasta",
+      "por",
+      "volver",
+      "salir",
+      "despertarse",
+      "levantarse",
+      "terminar"
+    ]
+  },
+  {
+    "capture": "quiz-q10.png",
+    "attendu": "Guadalajara",
+    "contient": [
+      "Guadalajara"
+    ],
+    "interdit": [
+      "Tequila",
+      "Cuernavaca"
+    ]
+  },
+  {
+    "capture": "quiz-q11-13.png",
+    "attendu": "11 que es bonito · 12 Tequila, Jalisco · 13 No lo dice (contexte : la lettre)",
+    "contexte": [
+      "quiz-q04-06.png",
+      "quiz-q10.png"
+    ],
+    "reponses": {
+      "11": "que es bonito",
+      "12": "Tequila",
+      "13": "No lo dice"
+    }
+  },
+  {
+    "capture": "quiz-q14-16.png",
+    "attendu": "14 un campo de golf · 15 piso (+ casa) · 16 cochera",
+    "contexte": [
+      "quiz-q10.png",
+      "quiz-q11-13.png"
+    ],
+    "reponses": {
+      "14": "un campo de golf",
+      "16": "cochera"
+    },
+    "contient": [
+      "piso"
+    ]
+  },
+  {
+    "capture": "quiz-q17-19.png",
+    "attendu": "17 doble · 18 patio · 19 reservación",
+    "reponses": {
+      "17": "doble",
+      "18": "patio",
+      "19": "reservación"
+    }
+  },
+  {
+    "capture": "quiz-q20-21.png",
+    "attendu": "20 con tarjeta · 21 e, b, d, c, f, a, g",
+    "reponses": {
+      "20": "con tarjeta",
+      "21": "e, b, d, c, f, a, g"
+    }
+  },
+  {
+    "capture": "quiz-q22-24.png",
+    "attendu": "22 tienen · 23 cocina · 24 abajo, detrás, lejos, fuera, debajo",
+    "reponses": {
+      "22": "tienen",
+      "23": "cocina"
+    },
+    "contient": [
+      "abajo",
+      "detrás",
+      "lejos",
+      "fuera",
+      "debajo"
+    ]
+  },
+  {
+    "capture": "quiz-q25.png",
+    "attendu": "el (1) · un (2) · unas (4) · los (6) · una (3)",
+    "contient": [
+      "el",
+      "un",
+      "unas",
+      "los",
+      "una"
+    ]
+  },
+  {
+    "capture": "quiz-q26-29.png",
+    "attendu": "26 V · 27 F · 28 V · 29 F (contexte : WhatsApp)",
+    "contexte": [
+      "quiz-q25.png",
+      "quiz-q26-whatsapp.png"
+    ],
+    "reponses": {
+      "26": "V",
+      "27": "F",
+      "28": "V",
+      "29": "F"
+    }
+  },
+  {
+    "capture": "quiz-q30-32.png",
+    "attendu": "30 F · 31 están · 32 tiene",
+    "contexte": [
+      "quiz-q26-whatsapp.png",
+      "quiz-q26-29.png"
+    ],
+    "reponses": {
+      "30": "F",
+      "31": "están",
+      "32": "tiene"
+    }
+  },
+  {
+    "capture": "quiz-q33-34.png",
+    "attendu": "33 están · 34 tiene",
+    "reponses": {
+      "33": "están",
+      "34": "tiene"
+    }
+  },
+  {
+    "capture": "quiz-q35-37.png",
+    "attendu": "réponses inventées en espagnol",
+    "interdit": [
+      "Escribe"
+    ]
+  },
+  {
+    "capture": "quiz-q38-41.png",
+    "attendu": "38 Guitarra · 39 queso · 40 Colegio · 41 quiero",
+    "reponses": {
+      "38": "Guitarra",
+      "39": "queso",
+      "40": "Colegio",
+      "41": "quiero"
+    }
+  },
+  {
+    "capture": "quiz-q42-44.png",
+    "attendu": "42 girar · 43 quinientos · 44 : 3, 2, 4, 1, 5",
+    "reponses": {
+      "42": "girar",
+      "43": "quinientos"
+    },
+    "contient": []
+  },
+  {
+    "capture": "quiz-q45-49.png",
+    "attendu": "réponses inventées en espagnol",
+    "interdit": [
+      "Qué hiciste"
+    ]
+  },
+  {
+    "capture": "quiz-q50-52.png",
+    "attendu": "50 piso · 51 el mar · 52 cuenta",
+    "reponses": {
+      "50": "piso",
+      "52": "cuenta"
+    },
+    "contient": [
+      "el mar"
+    ]
+  }
+]

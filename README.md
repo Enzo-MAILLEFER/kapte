@@ -70,5 +70,6 @@ Chaque capture est envoyée à Google pour analyse. Avec la clé gratuite, Googl
 L'app est en Swift (AppKit, sans dépendance), dans `App/`.
 
 - **Compiler** : `./build.sh` → `build/Kapte.app` et `build/Kapte.zip` (Xcode requis).
+- **Vérifier le prompt** : `./tests/verifier-prompt.sh` envoie chaque capture de `tests/captures/` à Gemini et la compare à `tests/cas.json` (`lignes`, `lignes_max`, `contient`, `interdit`, `reponses`). À lancer après chaque modification du prompt ; `./tests/verifier-prompt.sh pluriel` ne teste qu'une capture. Une requête toutes les 5 s, sans essai en parallèle, pour rester sous le quota gratuit.
 - **Tester sans toucher à l'installation** : `KAPTE_DEV=1 build/Kapte.app/Contents/MacOS/Kapte` (arrête d'abord le service : `launchctl bootout gui/$(id -u)/com.kapte`).
 - **Publier une version** : change le numéro dans `VERSION`, commit, puis `git tag vX.Y.Z && git push --tags`. GitHub compile l'app et crée la release ; les Kapte installés se mettent à jour tout seuls.

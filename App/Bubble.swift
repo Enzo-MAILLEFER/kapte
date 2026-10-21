@@ -15,8 +15,8 @@ final class Bubble {
 
     private let maxWidth: CGFloat = 280
     private let margin: CGFloat = 12
-    private let padX: CGFloat = 10
-    private let padY: CGFloat = 7
+    private let padX: CGFloat = 8
+    private let padY: CGFloat = 5
 
     init() {
         panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
@@ -33,7 +33,7 @@ final class Bubble {
         background.layer?.cornerRadius = 8
         background.layer?.backgroundColor = NSColor(calibratedWhite: 0.12, alpha: 0.7).cgColor
 
-        label.font = .systemFont(ofSize: 12)
+        label.font = .systemFont(ofSize: 11)
         label.textColor = NSColor(calibratedWhite: 1, alpha: 0.9)
         label.isSelectable = false
         label.drawsBackground = false

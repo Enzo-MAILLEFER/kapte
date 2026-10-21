@@ -6,6 +6,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let watcher = Watcher()
     private let updater = Updater()
     private let history = History()
+    private var recentCaptures: [(image: String, date: Date)] = []
+    static let contextDelay = 180.0  // secondes pendant lesquelles une capture sert de contexte aux suivantes
+    static let contextCount = 2      // captures précédentes envoyées avec la nouvelle (même requête)
 
     private var statusItem: NSStatusItem!
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -75,8 +78,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.bubble.show("Clé Gemini manquante : relance l'installateur Kapte.", seconds: 8)
                 return self.finish()
             }
+            let image: String
+            do {
+                image = try Gemini.prepareImage(url)
+            } catch {
+                self.bubble.show("Erreur : \(error.localizedDescription)", seconds: cfg.displaySeconds)
+                return self.finish()
+            }
+            // La capture d'avant sert de contexte si elle est récente (texte de lecture sur un autre écran)
+            self.recentCaptures.removeAll { Date().timeIntervalSince($0.date) > AppDelegate.contextDelay }
+            let context = self.recentCaptures.suffix(AppDelegate.contextCount).map(\.image)
+            self.recentCaptures = Array((self.recentCaptures + [(image, Date())]).suffix(AppDelegate.contextCount))
             self.bubble.showLoading()
-            Gemini.analyze(url, cfg: cfg) { result in
+            Gemini.analyze(image: image, context: context, cfg: cfg) { result in
                 switch result {
                 case .success(let answer):
                     // Analyse réussie : la capture ne sert plus (gardée en cas d'erreur pour réessayer)
