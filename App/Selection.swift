@@ -98,7 +98,8 @@ private final class SelectionView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        guard let rect = selection else { return }
+        // Zone encore plate (début du glissé) : insetBy renverrait un rectangle nul (infini → NaN, plantage)
+        guard let rect = selection, rect.width >= 2, rect.height >= 2 else { return }
         // Seulement les 4 coins, gris clair à moitié transparent : la zone reste lisible sans cadre voyant
         let r = rect.insetBy(dx: 0.5, dy: 0.5)
         let len = min(8, r.width / 2, r.height / 2)
